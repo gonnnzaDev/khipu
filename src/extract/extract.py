@@ -77,7 +77,6 @@ async def estructurar_texto_a_json(factura):
 
             model_id = await load_model(t, model_src=QWEN3VL_2B_MULTIMODAL_Q4_K.src)
 
-
             run = completion(t, model_id=model_id,
                 history=[{"role":"user",
                           "content":f"""{prompt}
@@ -86,7 +85,6 @@ async def estructurar_texto_a_json(factura):
                 {datos}
                 --------------------------------------
                 """}],
-                
                 response_format={"type":"json_object"})
 
             final = await run.final
