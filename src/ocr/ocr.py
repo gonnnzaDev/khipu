@@ -12,6 +12,7 @@ prompt = """
         - Si hay tablas, conserva su estructura de forma clara.
         - Si algún texto no se puede leer, indícalo como [ilegible].
         - Devuelve únicamente el texto extraído, sin explicaciones adicionales.
+
         """
 
 async def extraer_datos_imagen_ocr(archivo):
