@@ -1,0 +1,10 @@
+{
+  "ocNumber": "OC-2026-0158",
+  "buyer": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
+  "supplier": { "ruc": "20141189850", "name": "CONECTA RETAIL S.A." },
+  "items": [
+    { "code": "VT38SPYC", "description": "Refrigeradora LG DoorCooling 374LT VT38S", "quantity": 1, "unitPrice": 1305.77 },
+    { "code": "MH7032JAS", "description": "HORNO MICROONDAS LG 30LT MH7032JAS", "quantity": 1, "unitPrice": 345.08 }
+  ],
+  "date": "2026-07-25"
+}

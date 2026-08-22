@@ -1,0 +1,10 @@
+{
+  "guideNumber": "GR-000912",
+  "supplier": { "ruc": "20141189850", "name": "CONECTA RETAIL S.A." },
+  "receiver": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
+  "items": [
+    { "description": "Refrigeradora LG DoorCooling 374LT VT38S", "receivedQty": 1 },
+    { "description": "HORNO MICROONDAS LG 30LT MH7032JAS", "receivedQty": 1 }
+  ],
+  "date": "2026-07-29"
+}
