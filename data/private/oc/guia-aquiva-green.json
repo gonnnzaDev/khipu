@@ -1,7 +1,0 @@
-{
-  "guideNumber": "GR-000123",
-  "supplier": { "ruc": "20609436451", "name": "CORPORACION AQUIVA PUBLICIDAD S.A.C." },
-  "receiver": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
-  "items": [{ "description": "4 LOGOS PUERTAS Y 4 ROMBOS", "receivedQty": 1 }],
-  "date": "2026-07-05"
-}
