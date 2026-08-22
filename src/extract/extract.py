@@ -6,7 +6,6 @@ from src.ocr.ocr import extraer_datos_imagen_ocr
 from tetherto.qvac_sdk import Client, load_model, completion, unload_model
 from tetherto.qvac_sdk.models import QWEN3VL_2B_MULTIMODAL_Q4_K
 
-
 format_output = """
 {
     "tipo_comprobante": "tipo de comprobante, por ejemplo FACTURA ELECTRÓNICA",
@@ -62,7 +61,8 @@ prompt = f"""
         """
 
 
-async def estructurar_texto_a_json(factura):
+
+async def estructurar_texto_a_json(datos):
     
     async with Client() as client:
         
@@ -71,7 +71,6 @@ async def estructurar_texto_a_json(factura):
         final = None
 
         try:
-            datos = await extraer_datos_imagen_ocr(factura)
             t = client.transport
             final = None
 
