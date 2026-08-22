@@ -154,3 +154,11 @@ cython_debug/
 *.njsproj
 *.sln
 *.swp
+# KHIPU - datos privados y modelos locales
+data/private/
+data/ground-truth/
+*.xlsx
+models/
+*.gguf
+runs/
+.env.local
