@@ -1,7 +1,0 @@
-{
-  "ocNumber": "OC-2026-0132",
-  "buyer": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
-  "supplier": { "ruc": "20610743464", "name": "maxtire S.A.C" },
-  "items": [{ "code": "CL445001", "description": "445/65R22.5 20PR CHAO YANG EZ334 TL", "quantity": 2, "unitPrice": 300.85 }],
-  "date": "2026-06-05"
-}

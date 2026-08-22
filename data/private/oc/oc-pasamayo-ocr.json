@@ -1,7 +1,0 @@
-{
-  "ocNumber": "OC-2026-0150",
-  "buyer": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
-  "supplier": { "ruc": "20510422121", "name": "SERVICENTRO PASAMAYO S.A.C" },
-  "items": [{ "description": "DB5", "quantity": 127.34717, "unitPrice": 16.8136 }],
-  "date": "2026-07-15"
-}

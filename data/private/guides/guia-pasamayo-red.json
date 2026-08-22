@@ -1,7 +1,0 @@
-{
-  "guideNumber": "GR-000790",
-  "supplier": { "ruc": "20510422121", "name": "SERVICENTRO PASAMAYO S.A.C" },
-  "receiver": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
-  "items": [{ "description": "DB5", "receivedQty": 100 }],
-  "date": "2026-07-12"
-}

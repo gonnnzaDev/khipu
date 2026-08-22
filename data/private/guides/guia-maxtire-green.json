@@ -1,7 +1,0 @@
-{
-  "guideNumber": "GR-000456",
-  "supplier": { "ruc": "20610743464", "name": "maxtire S.A.C" },
-  "receiver": { "ruc": "20603012942", "name": "ANGELUZ EXPRESS E.I.R.L." },
-  "items": [{ "description": "445/65R22.5 20PR CHAO YANG EZ334 TL", "receivedQty": 2 }],
-  "date": "2026-06-10"
-}
