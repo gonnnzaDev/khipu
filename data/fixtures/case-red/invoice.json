@@ -1,0 +1,1 @@
+{"invoiceNumber": "F001-000202", "supplier": {"ruc": "20600000003", "name": "COMBUSTIBLES ESTE SAC"}, "payer": {"ruc": "20600000009", "name": "EMPRESA DEMO SAC"}, "items": [{"description": "DIESEL B5", "quantity": 137.697, "unitPrice": 17.661}], "subtotal": 2431.87, "tax": 437.74, "total": 2869.61, "currency": "PEN", "date": "2026-07-10"}

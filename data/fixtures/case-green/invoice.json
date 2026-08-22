@@ -1,0 +1,1 @@
+{"invoiceNumber": "F001-000101", "supplier": {"ruc": "20600000001", "name": "PROVEEDOR ANDINO SAC"}, "payer": {"ruc": "20600000009", "name": "EMPRESA DEMO SAC"}, "items": [{"description": "4 LOGOS PUERTAS", "quantity": 1, "unitPrice": 118.64}], "subtotal": 118.64, "tax": 21.36, "total": 140.0, "currency": "PEN", "date": "2026-07-01"}
