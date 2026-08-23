@@ -1,5 +1,5 @@
 # 🧾 KHIPU
-### Validación de facturas con IA multimodal local + Web3 payments
+### AI-Powered Invoice Validation with Local Multimodal AI + Web3 Payments
 
 **AI-powered invoice reconciliation for LATAM SMEs. Runs locally. Pays on-chain.**
 
