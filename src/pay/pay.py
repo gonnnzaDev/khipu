@@ -6,14 +6,14 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
-from src.pay.wdk_adapter import EVM_NETWORKS, build_wdk_payload
+from src.pay.wdk_adapter import NETWORKS, build_wdk_payload
 
 
 WDK_RUNNER = Path(__file__).with_name("wdk_runner.js")
 
 
 PaymentDecision = Literal["GREEN", "YELLOW", "RED", "APPROVED"]
-PaymentToken = Literal["USDT", "USDT0"]
+PaymentToken = Literal["USDT"]
 
 
 @dataclass
@@ -22,7 +22,7 @@ class PayRequest:
     status: PaymentDecision = "GREEN"
     amount: Decimal = Decimal("0")
     token: PaymentToken = "USDT"
-    network: str = "sepolia"
+    network: str = "ethereum"
     recipient: str = ""
     confirm: bool = False
     override_reason: str | None = None
@@ -60,20 +60,22 @@ def _validate_payment_fields(payment: PayRequest):
     if payment.status not in {"GREEN", "YELLOW", "RED", "APPROVED"}:
         return f"Unsupported payment status: {payment.status}."
 
-    if payment.token.upper() not in {"USDT", "USDT0"}:
+    if payment.token.upper() != "USDT":
         return f"Unsupported token: {payment.token}."
 
     if payment.amount <= 0:
         return "Amount must be greater than zero."
 
-    if network not in EVM_NETWORKS:
+    if network not in NETWORKS:
         return f"Unsupported network: {payment.network}."
 
-    if not _is_valid_evm_address(payment.recipient):
-        return "Recipient must be a valid non-zero EVM address."
+    address_error = _validate_recipient(payment.recipient, NETWORKS[network]["chain"])
+    if address_error:
+        return address_error
 
-    if payment.token_address and not _is_valid_evm_address(payment.token_address):
-        return "Token address must be a valid non-zero EVM address."
+    token_address_error = _validate_token_address(payment.token_address, NETWORKS[network]["chain"])
+    if token_address_error:
+        return token_address_error
 
     return None
 
@@ -84,6 +86,36 @@ def _is_valid_evm_address(address):
     if not re.fullmatch(r"0x[a-fA-F0-9]{40}", address):
         return False
     return int(address[2:], 16) != 0
+
+
+def _validate_recipient(address, chain):
+    if chain == "evm" and not _is_valid_evm_address(address):
+        return "Recipient must be a valid non-zero EVM address."
+    if chain == "tron" and not _is_valid_tron_address(address):
+        return "Recipient must be a valid TRON address."
+    if chain == "solana" and not _is_valid_solana_address(address):
+        return "Recipient must be a valid Solana address."
+    return None
+
+
+def _validate_token_address(address, chain):
+    if not address:
+        return None
+    if chain == "evm" and not _is_valid_evm_address(address):
+        return "Token address must be a valid non-zero EVM address."
+    if chain == "tron" and not _is_valid_tron_address(address):
+        return "Token address must be a valid TRON address."
+    if chain == "solana" and not _is_valid_solana_address(address):
+        return "Token address must be a valid Solana address."
+    return None
+
+
+def _is_valid_tron_address(address):
+    return isinstance(address, str) and re.fullmatch(r"T[1-9A-HJ-NP-Za-km-z]{33}", address) is not None
+
+
+def _is_valid_solana_address(address):
+    return isinstance(address, str) and re.fullmatch(r"[1-9A-HJ-NP-Za-km-z]{32,44}", address) is not None
 
 
 def _response(payment_status, allowed, payment, reason=None, wdk_payload=None):
