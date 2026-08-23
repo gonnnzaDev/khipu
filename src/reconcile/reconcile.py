@@ -8,12 +8,15 @@ LINE_TOLERANCE = Decimal("0.02")
 TOTAL_TOLERANCE = Decimal("0.01")
 PRICE_PASS_TOLERANCE = Decimal("0.02")
 PRICE_REVIEW_TOLERANCE = Decimal("0.10")
+YELLOW_SCORE_CAP = 85
 
 
 def reconcile(invoice, oc, guide, processed_invoices=None, ocr_confidence=None):
     processed_invoices = processed_invoices or []
 
-    checks = [
+    unauthorized = _unauthorized_items(invoice, oc)
+
+    base_checks = [
         _check_supplier_match(invoice, oc),
         _check_quantity_match(invoice, oc),
         _check_price_match(invoice, oc),
@@ -23,10 +26,24 @@ def reconcile(invoice, oc, guide, processed_invoices=None, ocr_confidence=None):
         _check_delivery_match(invoice, guide),
     ]
 
-    score = calculate_score(checks, ocr_confidence=ocr_confidence)
+    # Score con los 7 checks originales (no tocamos calculate_score)
+    score = calculate_score(base_checks, ocr_confidence=ocr_confidence)
+
+    # Ítems facturados sin autorización en la OC topan el caso en
+    # amarillo (REVIEW): nunca verde, para que un humano revise.
+    if unauthorized:
+        score = min(score, YELLOW_SCORE_CAP)
+
     status = status_from_score(score)
+    if unauthorized and status not in ("YELLOW", "RED"):
+        status = "YELLOW"
+
+    checks = base_checks + [_check_unauthorized_items(unauthorized)]
+
     discrepancies = [check["detail"] for check in checks if check["status"] != PASS]
     risk_flags = [check["id"] for check in checks if check["status"] == FAIL]
+    if unauthorized and "unauthorized_items" not in risk_flags:
+        risk_flags.append("unauthorized_items")
 
     return {
         "score": score,
@@ -169,6 +186,30 @@ def _check_delivery_match(invoice, guide):
             return _check("delivery_match", FAIL, detail)
 
     return _check("delivery_match", PASS, "Guía respalda la cantidad facturada.")
+
+
+def _check_unauthorized_items(unauthorized):
+    if not unauthorized:
+        return _check("unauthorized_items", PASS, "Todos los ítems de la factura están autorizados en la OC.")
+    names = ", ".join(_item_description(item) for item in unauthorized)
+    return _check("unauthorized_items", REVIEW, f"Ítem(s) facturados sin autorización en la OC: {names}.")
+
+
+def _unauthorized_items(invoice, oc):
+    """Ítems de la factura que no encontraron pareja en la OC (no autorizados)."""
+    invoice_items = invoice.get("items") or []
+    oc_items = oc.get("items") or []
+    if not invoice_items or not oc_items:
+        return []
+
+    matched_pairs, _ = _matched_items(invoice, oc)
+    matched_ids = {id(invoice_item) for invoice_item, _ in matched_pairs}
+    return [item for item in invoice_items if id(item) not in matched_ids]
+
+
+def _item_description(item):
+    text = str(item.get("descripcion") or item.get("description") or "sin descripción").strip()
+    return text[:60]
 
 
 def _matched_items(invoice, other_document, guide=False):

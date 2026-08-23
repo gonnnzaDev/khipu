@@ -1,0 +1,31 @@
+{
+  "name": "khipu",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gonnnzaDev/khipu.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/gonnnzaDev/khipu/issues"
+  },
+  "homepage": "https://github.com/gonnnzaDev/khipu#readme",
+  "dependencies": {
+    "@tetherto/wdk": "1.0.0-beta.16",
+    "@tetherto/wdk-wallet-evm": "1.0.0-beta.17",
+    "@tetherto/wdk-wallet-solana": "1.0.0-beta.13",
+    "@tetherto/wdk-wallet-tron": "1.0.0-beta.11"
+  }
+}
