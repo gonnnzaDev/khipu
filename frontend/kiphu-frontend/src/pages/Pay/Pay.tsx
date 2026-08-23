@@ -67,6 +67,7 @@ function Pay() {
   const [overrideReason, setOverrideReason] = useState('')
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [preview, setPreview] = useState<any | null>(null)
   const [touchedWallet, setTouchedWallet] = useState(false)
 
   const parsed = useMemo(() => {
@@ -126,70 +127,91 @@ function Pay() {
 
   const canPay = walletValid && amountValid && !isRed && !needsOverride && !paying
 
-  const handlePay = async () => {
+  const buildPayload = (confirm: boolean) => ({
+    recipient: wallet,
+    amount: String(transferAmountStr),
+    status: reconcStatus,
+    network,
+    token: 'USDT',
+    confirm,
+    invoice_id: invoiceId,
+    override_reason: overrideReason.trim() || null,
+  })
+
+  const validatePaymentInputs = () => {
     setError(null)
     if (!walletValid) {
       setError(`Recipient inválido para ${network}. ${recipientHelp(network)}.`)
       setTouchedWallet(true)
-      return
+      return false
     }
     if (!amountValid) {
       setError('Amount must be greater than zero.')
-      return
+      return false
     }
     if (isRed) {
       setError('RED reconciliation status blocks payment.')
-      return
+      return false
     }
     if (isYellow && !overrideReason.trim()) {
       setError('YELLOW status requires an override reason before payment.')
-      return
+      return false
     }
+    return true
+  }
+
+  const postPayment = async (confirm: boolean) => {
+    const res = await fetch('/pay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildPayload(confirm)),
+    })
+
+    const data = await res.json().catch(() => ({} as any))
+    if (!res.ok) throw new Error(data.reason || data.detail || 'Pago falló')
+    if (data.payment_status === 'PAYMENT_INVALID' || data.payment_status === 'PAYMENT_BLOCKED' || data.payment_status === 'REVIEW_REQUIRED' || data.allowed === false) {
+      throw new Error(data.reason || data.detail || `Pago no permitido: ${data.payment_status}`)
+    }
+    return data
+  }
+
+  const handlePreview = async () => {
+    if (!validatePaymentInputs()) return
 
     setPaying(true)
     try {
-      // contract exacto de src/pay/wdk_adapter.py:34 + pay.py:20
-      const payload = {
-        recipient: wallet,
-        amount: String(transferAmountStr),
-        status: reconcStatus,
-        network,
-        token: 'USDT',
-        confirm: false,
-        invoice_id: invoiceId,
-        override_reason: overrideReason.trim() || null,
-      }
+      const data = await postPayment(false)
+      setPreview(data)
+    } catch (e) {
+      setPreview(null)
+      setError(e instanceof Error ? e.message : 'Error al cotizar con WDK')
+    } finally {
+      setPaying(false)
+    }
+  }
 
-      const res = await fetch('/pay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
+  const handleConfirm = async () => {
+    if (!preview) {
+      setError('Primero generá un quote WDK.')
+      return
+    }
+    if (!validatePaymentInputs()) return
 
-      // FastAPI siempre responde 200 con {payment_status, allowed, reason}
-      const data = await res.json().catch(() => ({} as any))
-
-      // Si backend responde PAYMENT_INVALID / BLOCKED / REVIEW_REQUIRED, mostrar reason y no navegar
-      if (data.payment_status === 'PAYMENT_INVALID' || data.payment_status === 'PAYMENT_BLOCKED' || data.payment_status === 'REVIEW_REQUIRED' || data.allowed === false) {
-        // para PAYMENT_PREVIEW allowed=true es éxito
-        if (data.payment_status === 'PAYMENT_PREVIEW' && data.allowed) {
-          // ok -> ir a receipt
-        } else {
-          throw new Error(data.reason || data.detail || `Pago no permitido: ${data.payment_status}`)
-        }
-      }
-
-      if (!res.ok) throw new Error(data.reason || data.detail || 'Pago falló')
-
+    setPaying(true)
+    try {
+      const data = await postPayment(true)
+      const hash = data.tx_hash ?? data.hash ?? data.txHash ?? null
+      if (!hash) throw new Error(data.reason || 'WDK no devolvió hash de transacción.')
       navigate('/receipt', {
         state: {
-          hash: data.tx_hash ?? data.hash ?? data.txHash ?? null,
+          hash,
           receipt: JSON.stringify(data, null, 2),
           paymentStatus: data.payment_status,
         },
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al pagar')
+      setError(e instanceof Error ? e.message : 'Error al transferir con WDK')
+    } finally {
       setPaying(false)
     }
   }
@@ -251,7 +273,10 @@ function Pay() {
                   min="0"
                   step="0.000001"
                   value={usdtAmount}
-                  onChange={(e) => setUsdtAmount(e.target.value)}
+                  onChange={(e) => {
+                    setUsdtAmount(e.target.value)
+                    setPreview(null)
+                  }}
                   placeholder="0.00"
                   style={{
                     width: '100%',
@@ -275,6 +300,7 @@ function Pay() {
                 onChange={(e) => {
                   setNetwork(e.target.value as Network)
                   setTouchedWallet(Boolean(wallet))
+                  setPreview(null)
                 }}
                 style={{
                   width: '100%',
@@ -302,6 +328,7 @@ function Pay() {
                 onChange={(e) => {
                   setWallet(e.target.value)
                   setTouchedWallet(true)
+                  setPreview(null)
                 }}
                 onBlur={() => setTouchedWallet(true)}
                 placeholder={recipientPlaceholder(network)}
@@ -330,7 +357,10 @@ function Pay() {
                 <label style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text)' }}>Motivo override (requerido para YELLOW)</label>
                 <textarea
                   value={overrideReason}
-                  onChange={(e) => setOverrideReason(e.target.value)}
+                  onChange={(e) => {
+                    setOverrideReason(e.target.value)
+                    setPreview(null)
+                  }}
                   placeholder="Aprobado tras revisión manual porque..."
                   rows={3}
                   style={{
@@ -355,6 +385,15 @@ function Pay() {
                 {error}
               </div>
             )}
+
+            {preview && (
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text)', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', padding: '12px', borderRadius: 10, textAlign: 'left', wordBreak: 'break-word' }}>
+                <div style={{ color: '#22c55e', fontWeight: 800, marginBottom: 6 }}>Quote WDK generado</div>
+                <div>Wallet origen WDK: {preview.source_address ?? '—'}</div>
+                <div>Fee estimado: {preview.fee ?? preview.quote?.fee ?? '—'}</div>
+                <div>Estado: {preview.payment_status}</div>
+              </div>
+            )}
           </div>
 
           <div className="pay-page__actions">
@@ -364,11 +403,20 @@ function Pay() {
             <button
               type="button"
               className="pay-page__next"
-              onClick={handlePay}
+              onClick={handlePreview}
               disabled={!canPay}
               title={!walletValid ? 'Wallet inválida' : isRed ? 'Bloqueado en RED' : needsOverride ? 'Falta override' : !amountValid ? 'Monto inválido' : ''}
             >
-              {paying ? 'Generando…' : isRed ? 'Bloqueado' : 'Generar preview'}
+              {paying ? 'Cotizando…' : isRed ? 'Bloqueado' : 'Cotizar con WDK'}
+            </button>
+            <button
+              type="button"
+              className="pay-page__next"
+              onClick={handleConfirm}
+              disabled={!canPay || !preview}
+              title={!preview ? 'Primero generá un quote WDK' : ''}
+            >
+              {paying ? 'Transfiriendo…' : 'Confirmar transferencia WDK'}
             </button>
           </div>
         </div>

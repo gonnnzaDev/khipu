@@ -1,3 +1,9 @@
+import json
+from subprocess import CompletedProcess
+
+import pytest
+
+import src.pay.pay as pay_module
 from src.pay.pay import PayRequest, create_payment_response
 
 RECIPIENT = "0x1111111111111111111111111111111111111111"
@@ -5,6 +11,32 @@ TOKEN_ADDRESS = "0x2222222222222222222222222222222222222222"
 ETHEREUM_USDT = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
 TRON_USDT = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"
 SOLANA_USDT = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+
+
+@pytest.fixture(autouse=True)
+def mock_wdk_runner(monkeypatch):
+    def fake_run(_args, input, **_kwargs):
+        payload = json.loads(input)
+        if payload["action"] == "send":
+            response = {
+                "ok": False,
+                "payment_status": "WDK_SEND_NOT_CONFIGURED",
+                "reason": "WDK packages and wallet configuration are not wired yet; transfer() was not called.",
+                "tx_hash": None,
+            }
+        else:
+            response = {
+                "ok": True,
+                "payment_status": "PAYMENT_PREVIEW",
+                "reason": None,
+                "tx_hash": None,
+                "source_address": "0x3333333333333333333333333333333333333333",
+                "fee": "1000",
+                "quote": {"fee": "1000"},
+            }
+        return CompletedProcess(_args, 0, stdout=json.dumps(response), stderr="")
+
+    monkeypatch.setattr(pay_module.subprocess, "run", fake_run)
 
 
 def payment_payload(**overrides):

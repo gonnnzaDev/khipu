@@ -48,9 +48,6 @@ def create_payment_response(payment: PayRequest):
     except ValueError as error:
         return _response("PAYMENT_INVALID", False, payment, str(error))
 
-    if not payment.confirm:
-        return _response("PAYMENT_PREVIEW", True, payment, None, wdk_payload)
-
     return _response_from_wdk_runner(payment, wdk_payload)
 
 
@@ -179,4 +176,7 @@ def _response_from_wdk_runner(payment, wdk_payload):
     )
     response["tx_hash"] = runner_response.get("tx_hash")
     response["wdk_result"] = runner_response
+    response["source_address"] = runner_response.get("source_address")
+    response["fee"] = runner_response.get("fee")
+    response["quote"] = runner_response.get("quote")
     return response
