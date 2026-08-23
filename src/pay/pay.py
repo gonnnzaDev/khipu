@@ -130,6 +130,22 @@ def _response(payment_status, allowed, payment, reason=None, wdk_payload=None):
         "recipient": payment.recipient,
         "tx_hash": None,
         "wdk_payload": wdk_payload,
+        "wallet_action": _wallet_action(payment_status, allowed, wdk_payload),
+    }
+
+
+def _wallet_action(payment_status, allowed, wdk_payload):
+    if not allowed or wdk_payload is None:
+        return None
+
+    method = "quoteTransfer" if wdk_payload["action"] == "preview" else "transfer"
+    return {
+        "type": "OPEN_WALLET_TRANSFER",
+        "provider": "WDK",
+        "method": method,
+        "requires_human_confirmation": True,
+        "payment_status": payment_status,
+        "payload": wdk_payload,
     }
 
 

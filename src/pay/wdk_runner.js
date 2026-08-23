@@ -30,7 +30,7 @@ try {
   respond({
     ok: false,
     payment_status: 'WDK_SEND_NOT_CONFIGURED',
-    reason: 'WDK packages and wallet configuration are not wired yet; payment was not sent.',
+    reason: 'WDK packages and wallet configuration are not wired yet; transfer() was not called.',
     tx_hash: null,
     received: {
       network: payload.network,

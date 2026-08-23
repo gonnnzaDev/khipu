@@ -41,6 +41,14 @@ def test_pay_green_returns_wdk_preview_payload():
         "invoiceId": "demo-green-001",
         "chainId": 1,
     }
+    assert data["wallet_action"] == {
+        "type": "OPEN_WALLET_TRANSFER",
+        "provider": "WDK",
+        "method": "quoteTransfer",
+        "requires_human_confirmation": True,
+        "payment_status": "PAYMENT_PREVIEW",
+        "payload": data["wdk_payload"],
+    }
 
 
 def test_pay_red_blocks_payment():
@@ -49,6 +57,7 @@ def test_pay_red_blocks_payment():
     assert data["payment_status"] == "PAYMENT_BLOCKED"
     assert data["allowed"] is False
     assert data["wdk_payload"] is None
+    assert data["wallet_action"] is None
 
 
 def test_pay_yellow_requires_override_reason():
@@ -76,6 +85,7 @@ def test_pay_confirmed_send_is_not_configured_yet():
     assert data["allowed"] is False
     assert data["tx_hash"] is None
     assert data["wdk_payload"]["action"] == "send"
+    assert data["wallet_action"] is None
 
 
 def test_pay_rejects_invalid_recipient():
