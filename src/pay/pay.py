@@ -177,6 +177,7 @@ def _response_from_wdk_runner(payment, wdk_payload):
     response["tx_hash"] = runner_response.get("tx_hash")
     response["wdk_result"] = runner_response
     response["source_address"] = runner_response.get("source_address")
+    response["balances"] = runner_response.get("balances")
     response["fee"] = runner_response.get("fee")
     response["quote"] = runner_response.get("quote")
     return response
