@@ -120,6 +120,29 @@ def test_pay_confirmed_send_is_not_configured_yet():
     assert data["wallet_action"] is None
 
 
+def test_pay_propagates_wdk_insufficient_token_balance(monkeypatch):
+    def fake_run(_args, input, **_kwargs):
+        payload = json.loads(input)
+        response = {
+            "ok": False,
+            "payment_status": "WDK_INSUFFICIENT_TOKEN_BALANCE",
+            "reason": f"La wallet WDK no tiene suficiente {payload['token']}.",
+            "tx_hash": None,
+            "source_address": "0x3333333333333333333333333333333333333333",
+            "balances": {"token_balance": "0", "native_balance": "0"},
+        }
+        return CompletedProcess(_args, 0, stdout=json.dumps(response), stderr="")
+
+    monkeypatch.setattr(pay_module.subprocess, "run", fake_run)
+
+    data = create_payment_response(PayRequest(**payment_payload()))
+
+    assert data["payment_status"] == "WDK_INSUFFICIENT_TOKEN_BALANCE"
+    assert data["allowed"] is False
+    assert data["source_address"] == "0x3333333333333333333333333333333333333333"
+    assert data["balances"] == {"token_balance": "0", "native_balance": "0"}
+
+
 def test_pay_rejects_invalid_recipient():
     data = create_payment_response(PayRequest(**payment_payload(recipient="0x0")))
 

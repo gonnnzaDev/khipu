@@ -92,6 +92,48 @@ function normalizeTransferResult(result) {
   }
 }
 
+function networkGasToken(network) {
+  if (network === 'ethereum') return 'ETH'
+  if (network === 'tron') return 'TRX'
+  if (network === 'solana') return 'SOL'
+  return 'native gas token'
+}
+
+async function getBalances(account, payload) {
+  const tokenBalance = await account.getTokenBalance(payload.tokenAddress)
+  const nativeBalance = await account.getBalance()
+
+  return {
+    token_balance: tokenBalance,
+    native_balance: nativeBalance,
+  }
+}
+
+async function validateBalances(account, payload) {
+  const balances = await getBalances(account, payload)
+  const amount = BigInt(payload.amount)
+
+  if (balances.token_balance < amount) {
+    return {
+      ok: false,
+      payment_status: 'WDK_INSUFFICIENT_TOKEN_BALANCE',
+      reason: `La wallet WDK no tiene suficiente ${payload.token}. Balance: ${balances.token_balance}; requerido: ${amount}.`,
+      balances,
+    }
+  }
+
+  if (payload.action === 'send' && balances.native_balance === 0n) {
+    return {
+      ok: false,
+      payment_status: 'WDK_INSUFFICIENT_GAS_BALANCE',
+      reason: `La wallet WDK necesita ${networkGasToken(payload.network)} para pagar gas.`,
+      balances,
+    }
+  }
+
+  return { ok: true, balances }
+}
+
 loadDotEnv()
 
 let account
@@ -115,6 +157,19 @@ try {
   account = await wdk.getAccount(payload.network, accountIndex)
   const sourceAddress = await account.getAddress()
   const options = transferOptions(payload)
+  const balanceCheck = await validateBalances(account, payload)
+
+  if (!balanceCheck.ok) {
+    respond({
+      ok: false,
+      payment_status: balanceCheck.payment_status,
+      reason: balanceCheck.reason,
+      tx_hash: null,
+      source_address: sourceAddress,
+      balances: balanceCheck.balances,
+    })
+    process.exit(0)
+  }
 
   if (payload.action === 'preview') {
     const quote = await account.quoteTransfer(options)
@@ -124,6 +179,7 @@ try {
       reason: null,
       tx_hash: null,
       source_address: sourceAddress,
+      balances: balanceCheck.balances,
       fee: quote?.fee ?? null,
       quote,
     })
@@ -137,6 +193,7 @@ try {
     reason: transfer.hash ? null : 'WDK transfer completed without returning a transaction hash.',
     tx_hash: transfer.hash,
     source_address: sourceAddress,
+    balances: balanceCheck.balances,
     fee: transfer.fee,
     wdk_transfer: transfer.raw,
   })
