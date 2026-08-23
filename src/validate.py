@@ -47,16 +47,58 @@ GROUND_TRUTH = {
             {"descripcion": "INGRESO POR FLETE", "cantidad": 1, "precio_unitario": 57.63}
         ],
         "totales": {"subtotal": 1708.48, "igv": 307.52, "total": 2016.00}
+    },
+
+
+        "FP01-00235556": {
+        "serie": "FP01", "numero": "00235556",
+        "emisor": {"razon_social": "SERVICENTRO PASAMAYO S.A.C", "ruc": "20510422121", "direccion": ""},
+        "cliente": {"razon_social": "ANGELUZ EXPRESS E.I.R.L.", "ruc": "20603012942", "direccion": ""},
+        "fecha_emision": "2026-07-15", "moneda": "PEN",
+        "items": [{"descripcion": "DB5", "cantidad": 127.34717, "precio_unitario": 16.8136}],
+        "totales": {"subtotal": 2141.16, "igv": 385.41, "total": 2526.57}
+    },
+    "FP02-00157272": {
+        "serie": "FP02", "numero": "00157272",
+        "emisor": {"razon_social": "SERVICENTRO PASAMAYO S.A.C", "ruc": "20510422121", "direccion": ""},
+        "cliente": {"razon_social": "ANGELUZ EXPRESS E.I.R.L.", "ruc": "20603012942", "direccion": ""},
+        "fecha_emision": "2026-07-23", "moneda": "PEN",
+        "items": [{"descripcion": "DB5", "cantidad": 105.54677, "precio_unitario": 17.7966}],
+        "totales": {"subtotal": 1878.36, "igv": 338.11, "total": 2216.47}
+    },
+    "F581-07942046": {
+        "serie": "F581", "numero": "07942046",
+        "emisor": {"razon_social": "PROVEEDOR RUC 20100041953", "ruc": "20100041953", "direccion": ""},
+        "cliente": {"razon_social": "ANGELUZ EXPRESS E.I.R.L.", "ruc": "20603012942", "direccion": ""},
+        "fecha_emision": "2026-07-17", "moneda": "PEN",
+        "items": [{"descripcion": "SERVICIO FACTURADO", "cantidad": 1, "precio_unitario": 50.00}],
+        "totales": {"subtotal": 50.00, "igv": 9.00, "total": 59.00}
+    },
+    "F004-0020066": {
+        "serie": "F004", "numero": "0020066",
+        "emisor": {"razon_social": "PROVEEDOR RUC 20502797230", "ruc": "20502797230", "direccion": ""},
+        "cliente": {"razon_social": "ANGELUZ EXPRESS E.I.R.L.", "ruc": "20603012942", "direccion": ""},
+        "fecha_emision": "2026-06-26", "moneda": "PEN",
+        "items": [{"descripcion": "00301 07018 CORREA DE DISTRIBUCION CONTITECH", "cantidad": 3, "precio_unitario": 75.93}],
+        "totales": {"subtotal": 227.79, "igv": 41.00, "total": 268.79}
+    },
+    "FA10-00000027": {
+        "serie": "FA10", "numero": "00000027",
+        "emisor": {"razon_social": "PROVEEDOR RUC 20543158033", "ruc": "20543158033", "direccion": ""},
+        "cliente": {"razon_social": "ANGELUZ EXPRESS E.I.R.L.", "ruc": "20603012942", "direccion": ""},
+        "fecha_emision": "2026-06-26", "moneda": "PEN",
+        "items": [{"descripcion": "00301 07018 CORREA DE DISTRIBUCION CONTITECH", "cantidad": 1, "precio_unitario": 110.00}],
+        "totales": {"subtotal": 110.00, "igv": 19.80, "total": 129.80}
     }
 }
 
 router = APIRouter()
 
-def _detect_invoice_number(filename: str) -> str:
-    """Extrae el numero de factura del nombre del archivo."""
-    # Patrones: F001-00002289.png, FP01-00236208.png, etc.
-    m = re.search(r'F\d{2,3}-\d+', filename)
-    return m.group(0) if m else None
+def _detect_invoice_number(filename: str):
+    for key in GROUND_TRUTH:
+        if key in filename:
+            return key
+    return None
 
 @router.post("/validate")
 async def validate(
