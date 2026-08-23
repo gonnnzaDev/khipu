@@ -1,0 +1,124 @@
+.receipt-page {
+  min-height: calc(100dvh - 57px);
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background: var(--bg);
+}
+
+.receipt-page__inner {
+  max-width: 960px;
+  width: 100%;
+  min-height: calc(100dvh - 57px - 64px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+}
+
+.receipt-page__title {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--text-h);
+  text-align: left;
+  line-height: 1;
+}
+
+.receipt-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+@media (max-width: 720px) {
+  .receipt-page__grid { grid-template-columns: 1fr; }
+}
+
+.receipt-page__grid .receipt-page__card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-page__card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  padding: 20px;
+  text-align: left;
+}
+
+.receipt-page__label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.receipt-page__hash {
+  display: block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-h);
+  word-break: break-all;
+  background: #0a0a0f;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.receipt-page__receipt {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.receipt-page__download {
+  margin-top: 12px;
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.receipt-page__download:hover {
+  border-color: var(--text);
+  color: var(--text-h);
+}
+
+.receipt-page__btn {
+  align-self: center;
+  margin-top: 32px;
+  padding: 14px 28px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-h);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+}
+
+.receipt-page__btn:hover {
+  background: #1e2028;
+  transform: translateY(-1px);
+}

@@ -1,0 +1,21 @@
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  padding: 8px 16px;
+  z-index: 10;
+}
+
+.footer__link {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  text-decoration: none;
+  opacity: 0.5;
+}
+
+.footer__link:hover {
+  color: var(--text-h);
+  opacity: 1;
+}
