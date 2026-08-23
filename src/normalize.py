@@ -29,7 +29,7 @@ def normalize_invoice(raw: dict, source_file: str = "", model: str = "") -> Invo
     cliente = raw.get("cliente") or {}
     totales = raw.get("totales") or {}
     
-    # Validación crítica: RUC del emisor
+    # Validacion critica: RUC del emisor
     ruc_emisor = (emisor.get("ruc") or "").strip()
     if not ruc_emisor:
         raise ValueError("EXTRACTION_ERROR: ruc_emisor ausente")

@@ -1,5 +1,4 @@
-from fastapi import FastAPI
-from fastapi import APIRouter, UploadFile, File
+from fastapi import FastAPI, APIRouter, UploadFile, File
 import shutil, tempfile
 from pathlib import Path
 
@@ -10,19 +9,13 @@ app = FastAPI(title="KHIPU")
 @app.post("/subir-archivo")
 async def archivo_post(file: UploadFile = File(...)):
     try:
-        
         dest = Path("data/private/invoices") / file.filename
         dest.parent.mkdir(parents=True, exist_ok=True)
         with dest.open("wb") as out:
             shutil.copyfileobj(file.file, out)
-
-        #devueolve el path para despues eliminarlo 
-        return {"path": str(dest)} 
-    
-    except Exception as e: 
-        return {
-        "mensaje": e
-    }
+        return {"path": str(dest)}
+    except Exception as e:
+        return {"mensaje": str(e)}
 
 @app.delete("/eliminar-archivo")
 async def archivo_delete(path: str):
@@ -34,3 +27,6 @@ async def archivo_delete(path: str):
 async def pay(request: PayRequest):
     return create_payment_response(request)
 
+# ---- REGISTRO DEL ROUTER DE VALIDATE ----
+from src.validate import router as validate_router
+app.include_router(validate_router)
