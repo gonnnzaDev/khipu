@@ -34,6 +34,13 @@
   font-weight: 600;
 }
 
+.presentation__logo {
+  width: 132px;
+  height: 132px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 24px rgba(34, 211, 238, 0.25));
+}
+
 .presentation__title {
   margin: 0;
   font-size: 88px;

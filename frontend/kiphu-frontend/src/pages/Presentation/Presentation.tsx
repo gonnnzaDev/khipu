@@ -1,5 +1,6 @@
 import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import logo from '../../assets/logo.png'
 import './Presentation.css'
 
 function Presentation() {
@@ -9,6 +10,7 @@ function Presentation() {
     <section className="presentation">
       <div className="presentation__hero">
         <p className="presentation__eyebrow">Aleph Hackathon 2026 · MVP 24H · USD₮ Testnet</p>
+        <img className="presentation__logo" src={logo} alt="Logo KHIPU" />
         <h1 className="presentation__title">KHIPU</h1>
         <p className="presentation__subtitle">AI-Powered Invoice Guardian</p>
         <div className="presentation__pipeline">
