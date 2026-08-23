@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../../components/Header/Header.tsx'
 import InvoiceUpload from '../../components/InvoiceUpload/InvoiceUpload.tsx'
+import NetworkSelect from '../../components/NetworkSelect/NetworkSelect.tsx'
 import './Upload.css'
 
 export default function Upload() {
@@ -93,11 +94,7 @@ export default function Upload() {
               <div className="upload-page__section" style={{ marginTop: 'auto', marginBottom: 'auto' }}>
                 <span className="upload-page__kicker">Destino</span>
               <label className="upload-page__label">Red</label>
-              <select className="upload-page__input" value={network} onChange={(e) => setNetwork(e.target.value)}>
-                <option value="ethereum">Ethereum</option>
-                <option value="tron">TRON</option>
-                <option value="solana">Solana</option>
-              </select>
+              <NetworkSelect value={network} onChange={setNetwork} />
               <label className="upload-page__label">Enviar a wallet</label>
               <input
                 type="text"

@@ -37,7 +37,7 @@ function Presentation() {
         <div className="presentation__intro">
           <span className="presentation__kicker">Resumen ejecutivo</span>
           <p>
-            KHIPU prioriza una sola experiencia de extremo a extremo que funciona en 48 horas. No automatiza toda la
+            KHIPU prioriza una sola experiencia de extremo a extremo que funciona en 24 horas. No automatiza toda la
             contabilidad: resuelve el momento crítico de decidir si una factura está suficientemente respaldada para ser
             pagada, con trazabilidad completa.
           </p>
@@ -62,7 +62,7 @@ function Presentation() {
         </div>
 
         <div className="presentation__section">
-          <span className="presentation__kicker">MVP 48H — 6 capacidades</span>
+          <span className="presentation__kicker">MVP 24H — 6 capacidades</span>
           <ol>
             <li><strong>Cargar</strong> factura + OC + guía</li>
             <li><strong>Extraer</strong> y normalizar con OCR y LLM local</li>
