@@ -3,9 +3,8 @@
 skills-lock.json
 
 # Private Data
-data/private/
- 
-
+data/private/ 
+    
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

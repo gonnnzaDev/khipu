@@ -3,6 +3,8 @@ from fastapi import APIRouter, UploadFile, File
 import shutil, tempfile
 from pathlib import Path
 
+from src.pay.pay import PayRequest, create_payment_response
+
 app = FastAPI(title="KHIPU")
 
 @app.post("/subir-archivo")
@@ -27,4 +29,8 @@ async def archivo_delete(path: str):
     Path(path).unlink(missing_ok=True)
     return {"ok": True}
 
+
+@app.post("/pay")
+async def pay(request: PayRequest):
+    return create_payment_response(request)
 
