@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/subir': 'http://localhost:8000',
       '/validate': 'http://localhost:8000',
       '/pay': 'http://localhost:8000',
       '/eliminar-archivo': 'http://localhost:8000',

@@ -1,7 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-from src.modules.archivos import guardar
 from src.pay.pay import PayRequest, create_payment_response
 
 app = FastAPI(title="KHIPU")
@@ -14,24 +13,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.post("/subir/factura/")
-async def subir_factura(file: UploadFile = File(...)):
-    if not (file.content_type or "").startswith("image/"):
-        raise HTTPException(400, "factura debe ser PNG/JPG/JPEG")
-    return guardar(file, "data/private/invoices")
-
-@app.post("/subir/oc/")
-async def subir_oc(file: UploadFile = File(...)):
-    if not file.filename.endswith(".json"):
-        raise HTTPException(400, "OC debe ser .json")
-    return guardar(file, "data/private/oc")
-
-@app.post("/subir/guia/")
-async def subir_guia(file: UploadFile = File(...)):
-    if not file.filename.endswith(".json"):
-        raise HTTPException(400, "guía debe ser .json")
-    return guardar(file, "data/private/guides")
 
 @app.delete("/eliminar-archivo")
 async def archivo_delete(path: str):

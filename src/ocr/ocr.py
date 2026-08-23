@@ -1,4 +1,4 @@
-from pathlib import Path
+import json
 
 from tetherto.qvac_sdk import Client, load_model, completion, unload_model
 from tetherto.qvac_sdk.models import QWEN3VL_2B_MULTIMODAL_Q4_K
@@ -14,6 +14,18 @@ prompt = """
         - Devuelve únicamente el texto extraído, sin explicaciones adicionales.
 
         """
+
+formato_prompt = """
+Recibís un JSON con datos de un ticket/factura.
+Tu tarea: devolver ese mismo contenido con formato prolijo y legible para una persona.
+
+Reglas:
+- Usá secciones claras con títulos (Emisor, Cliente, Items, Totales).
+- Alineá los montos y destacá el total final.
+- NO inventes, NO agregues ni modifiques ningún dato: usá exactamente los valores del JSON.
+- NO devuelvas JSON: devolvé únicamente texto plano formateado, sin explicaciones adicionales.
+"""
+
 
 async def extraer_datos_imagen_ocr(archivo):
     async with Client() as client:
@@ -37,14 +49,26 @@ async def extraer_datos_imagen_ocr(archivo):
         finally: 
             if t is not None and model_id is not None:
                 await unload_model(t, model_id=model_id)
-        
 
 
+async def transformar_ticket(datos):
+    """Recibe un JSON (dict), la IA local lo formatea lindo y devuelve el texto."""
+    async with Client() as client:
 
+        t = None
+        model_id = None
 
+        try:
+            t = client.transport
+            model_id = await load_model(t, model_src=QWEN3VL_2B_MULTIMODAL_Q4_K.src)
 
+            run = completion(t, model_id=model_id,
+                history=[{"role":"user","content":
+                    f"{formato_prompt}\n\nJSON:\n{json.dumps(datos, ensure_ascii=False, indent=2)}"}],
+                response_format={"type":"text"})
 
-    
-    
-
-
+            final = await run.final
+            return final.content_text
+        finally:
+            if t is not None and model_id is not None:
+                await unload_model(t, model_id=model_id)
