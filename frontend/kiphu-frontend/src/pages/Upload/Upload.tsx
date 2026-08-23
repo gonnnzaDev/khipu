@@ -1,4 +1,4 @@
-import { useCallback, useState, useTransition } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Header from '../../components/Header/Header.tsx'
 import InvoiceUpload from '../../components/InvoiceUpload/InvoiceUpload.tsx'
@@ -6,41 +6,19 @@ import './Upload.css'
 
 export default function Upload() {
   const [files, setFiles] = useState<(File | null)[]>([null, null, null])
-  const [result, setResult] = useState<string | null>(() => null)
   const [loading, setLoading] = useState(false)
-  const [isError, setIsError] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [wallet, setWallet] = useState('0x742d35Cc6634C0532925a3b8D4C9e4e6b7a8b9c0')
-  const [, startTransition] = useTransition()
   const navigate = useNavigate()
 
   const handleFile = useCallback(
-    (idx: number) => async (f: File) => {
+    (idx: number) => (f: File) => {
       setFiles((prev) => {
         const next = [...prev]
         next[idx] = f
         return next
       })
-      setResult(null)
-      setIsError(false)
-      setLoading(true)
-      try {
-        const form = new FormData()
-        form.append('file', f)
-        const res = await fetch('/api/facturas', { method: 'POST', body: form })
-        if (!res.ok) throw new Error('OCR falló')
-        const data = await res.text()
-        startTransition(() => {
-          setResult(data)
-          setIsError(false)
-        })
-      } catch (e) {
-        startTransition(() => {
-          setResult(e instanceof Error ? e.message : 'Error')
-          setIsError(true)
-        })
-      } finally {
-        setLoading(false)
-      }
+      setError(null)
     },
     [],
   )
@@ -51,15 +29,56 @@ export default function Upload() {
       next[idx] = null
       return next
     })
+    setError(null)
   }, [])
 
-  const handleNext = useCallback(() => {
-    if (isError) {
-      navigate('/proposal', { state: { proposal: result, wallet, status: 'error' } })
-    } else {
-      navigate('/proposal', { state: { proposal: result, wallet, status: result ? 'proposal' : 'idle' } })
+  const handleValidate = useCallback(async () => {
+    if (files.some((f) => f === null)) {
+      setError('Faltan archivos: cargá factura + OC + guía para validar.')
+      return
     }
-  }, [navigate, result, wallet, isError])
+    setLoading(true)
+    setError(null)
+    try {
+      const form = new FormData()
+      // /validate espera campos exactamente: invoice, oc, guide (ver src/validate/validate.py:62)
+      form.append('invoice', files[0] as File)
+      form.append('oc', files[1] as File)
+      form.append('guide', files[2] as File)
+
+      const res = await fetch('/validate', { method: 'POST', body: form })
+      if (!res.ok) {
+        const txt = await res.text()
+        // intenta extraer detail de FastAPI
+        let detail = txt
+        try {
+          const j = JSON.parse(txt)
+          detail = j.detail || j.message || txt
+        } catch {
+          // txt ya es el mensaje
+        }
+        throw new Error(detail)
+      }
+      const data = await res.json()
+      const reconc = data.reconciliacion ?? data.reconciliation ?? {}
+      const score = reconc.score ?? data.score ?? null
+      navigate('/proposal', {
+        state: {
+          proposal: JSON.stringify(data, null, 2),
+          score,
+          wallet,
+          status: score !== null ? undefined : 'proposal',
+        },
+      })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Error al validar'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }, [files, navigate, wallet])
+
+  const canValidate = files.every((f) => f !== null) && !loading
 
   return (
     <>
@@ -81,6 +100,7 @@ export default function Upload() {
                 spellCheck={false}
               />
               </div>
+              {error && <p style={{ color: '#c0392b', fontSize: 14, marginTop: 12 }}>{error}</p>}
             </div>
 
             <div className="upload-page__section upload-page__section--plain">
@@ -109,8 +129,8 @@ export default function Upload() {
             <button type="button" className="upload-page__back" onClick={() => navigate('/')}>
               ← Volver
             </button>
-            <button type="button" className="upload-page__next" onClick={handleNext} disabled={loading}>
-              Siguiente →
+            <button type="button" className="upload-page__next" onClick={handleValidate} disabled={!canValidate}>
+              {loading ? 'Validando…' : 'Validar →'}
             </button>
           </div>
         </div>
