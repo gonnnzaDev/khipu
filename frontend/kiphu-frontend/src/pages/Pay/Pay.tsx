@@ -6,13 +6,17 @@ import './Pay.css'
 type State = {
   proposal?: string
   wallet?: string
+  network?: Network
   amount?: string
+  invoiceCurrency?: string
   score?: number
   status?: string
   invoiceId?: string
   riskFlags?: string[]
   recommendation?: string
 }
+
+type Network = 'ethereum' | 'tron' | 'solana'
 
 function isValidEvmAddress(address: string): boolean {
   if (!address || typeof address !== 'string') return false
@@ -25,12 +29,41 @@ function isValidEvmAddress(address: string): boolean {
   }
 }
 
+function isValidTronAddress(address: string): boolean {
+  return /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(address)
+}
+
+function isValidSolanaAddress(address: string): boolean {
+  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
+}
+
+function isValidRecipient(address: string, network: Network): boolean {
+  if (network === 'ethereum') return isValidEvmAddress(address)
+  if (network === 'tron') return isValidTronAddress(address)
+  return isValidSolanaAddress(address)
+}
+
+function recipientHelp(network: Network): string {
+  if (network === 'ethereum') return 'Wallet EVM: 0x + 40 hex y no cero'
+  if (network === 'tron') return 'Wallet TRON: empieza con T y tiene 34 caracteres base58'
+  return 'Wallet Solana: dirección base58 de 32 a 44 caracteres'
+}
+
+function recipientPlaceholder(network: Network): string {
+  if (network === 'ethereum') return '0x...'
+  if (network === 'tron') return 'T...'
+  return 'Solana base58...'
+}
+
 function Pay() {
   const navigate = useNavigate()
   const location = useLocation() as { state: State | null }
   const proposal = location.state?.proposal ?? null
-  const initialWallet = location.state?.wallet ?? '0x742d35Cc6634C0532925a3b8D4C9e4e6b7a8b9c0'
+  const initialWallet = location.state?.wallet ?? ''
+  const initialNetwork = location.state?.network ?? 'ethereum'
   const [wallet, setWallet] = useState(initialWallet)
+  const [network, setNetwork] = useState<Network>(initialNetwork)
+  const [usdtAmount, setUsdtAmount] = useState('')
   const [overrideReason, setOverrideReason] = useState('')
   const [paying, setPaying] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -57,6 +90,10 @@ function Pay() {
     return v != null ? String(v) : null
   }, [invoice, location.state?.amount, parsed])
 
+  const invoiceCurrency = (location.state?.invoiceCurrency ?? invoice?.currency ?? invoice?.moneda ?? parsed?.currency ?? parsed?.moneda ?? 'USDT').toString().toUpperCase()
+  const requiresManualUsdtAmount = invoiceCurrency !== 'USDT'
+  const transferAmountStr = requiresManualUsdtAmount ? usdtAmount.trim() : amountStr
+
   const invoiceId: string | null = useMemo(() => {
     return location.state?.invoiceId ?? invoice?.invoiceNumber ?? invoice?.numero ?? parsed?.invoiceNumber ?? null
   }, [invoice, location.state?.invoiceId, parsed])
@@ -78,21 +115,21 @@ function Pay() {
   const riskFlags: string[] = reconciliacion?.risk_flags ?? reconciliacion?.riskFlags ?? location.state?.riskFlags ?? []
   const score: number | null = location.state?.score ?? reconciliacion?.score ?? null
 
-  const walletValid = isValidEvmAddress(wallet)
-  const walletError = touchedWallet && !walletValid ? 'Wallet inválida: debe ser 0x + 40 hex y no ser 0x00...0 (re: pay.py:88)' : null
+  const walletValid = isValidRecipient(wallet, network)
+  const walletError = touchedWallet && !walletValid ? `Wallet inválida para ${network}: ${recipientHelp(network)}` : null
 
   const isRed = reconcStatus === 'RED'
   const isYellow = reconcStatus === 'YELLOW'
   const needsOverride = isYellow && overrideReason.trim().length === 0
-  const amountNum = amountStr != null ? Number(amountStr) : NaN
-  const amountValid = amountStr != null && !isNaN(amountNum) && amountNum > 0
+  const amountNum = transferAmountStr != null ? Number(transferAmountStr) : NaN
+  const amountValid = transferAmountStr != null && transferAmountStr !== '' && !isNaN(amountNum) && amountNum > 0
 
   const canPay = walletValid && amountValid && !isRed && !needsOverride && !paying
 
   const handlePay = async () => {
     setError(null)
     if (!walletValid) {
-      setError('Recipient must be a valid non-zero EVM address.')
+      setError(`Recipient inválido para ${network}. ${recipientHelp(network)}.`)
       setTouchedWallet(true)
       return
     }
@@ -114,9 +151,9 @@ function Pay() {
       // contract exacto de src/pay/wdk_adapter.py:34 + pay.py:20
       const payload = {
         recipient: wallet,
-        amount: String(amountStr),
+        amount: String(transferAmountStr),
         status: reconcStatus,
-        network: 'ethereum',
+        network,
         token: 'USDT',
         confirm: false,
         invoice_id: invoiceId,
@@ -148,6 +185,7 @@ function Pay() {
         state: {
           hash: data.tx_hash ?? data.hash ?? data.txHash ?? null,
           receipt: JSON.stringify(data, null, 2),
+          paymentStatus: data.payment_status,
         },
       })
     } catch (e) {
@@ -161,7 +199,7 @@ function Pay() {
       <Header />
       <main className="pay-page">
         <div className="pay-page__inner">
-          <h1 className="pay-page__title">Confirmar pago</h1>
+          <h1 className="pay-page__title">Previsualizar pago</h1>
 
           {/* Resumen */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', padding: '12px 0' }}>
@@ -194,14 +232,70 @@ function Pay() {
 
           <div className="pay-page__amount">
             <span className="pay-page__amount-label">Monto final</span>
-            <span className="pay-page__amount-value">{amountStr != null ? `${Number(amountStr).toFixed(2)} USDT` : '—'}</span>
-            {!amountValid && amountStr !== null && <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: '#ef4444' }}>Monto inválido, debe ser &gt; 0</span>}
+            <span className="pay-page__amount-value">{amountValid ? `${Number(transferAmountStr).toFixed(2)} USDT` : '—'}</span>
+            {!amountValid && transferAmountStr !== null && <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: '#ef4444' }}>Monto USDT inválido, debe ser &gt; 0</span>}
+            {requiresManualUsdtAmount && amountStr != null && (
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: '#eab308', textAlign: 'center' }}>
+                Factura original: {Number(amountStr).toFixed(2)} {invoiceCurrency}. Ingresá el monto USDT a transferir; no hay conversión FX automática en el MVP.
+              </span>
+            )}
           </div>
 
           {/* Wallet + override */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 520, width: '100%', margin: '0 auto' }}>
+            {requiresManualUsdtAmount && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
+                <label style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text)' }}>Monto USDT a transferir</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  value={usdtAmount}
+                  onChange={(e) => setUsdtAmount(e.target.value)}
+                  placeholder="0.00"
+                  style={{
+                    width: '100%',
+                    padding: '12px 14px',
+                    borderRadius: 10,
+                    border: `1px solid ${!amountValid && usdtAmount ? '#ef4444' : 'var(--border)'}`,
+                    background: 'var(--bg-card)',
+                    color: 'var(--text-h)',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                />
+              </div>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
-              <label style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text)' }}>Enviar a wallet (EVM)</label>
+              <label style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text)' }}>Red</label>
+              <select
+                value={network}
+                onChange={(e) => {
+                  setNetwork(e.target.value as Network)
+                  setTouchedWallet(Boolean(wallet))
+                }}
+                style={{
+                  width: '100%',
+                  padding: '12px 14px',
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-h)',
+                  fontFamily: 'var(--mono)',
+                  fontSize: 13,
+                  outline: 'none',
+                }}
+              >
+                <option value="ethereum">Ethereum</option>
+                <option value="tron">TRON</option>
+                <option value="solana">Solana</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'left' }}>
+              <label style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text)' }}>Enviar a wallet</label>
               <input
                 type="text"
                 value={wallet}
@@ -210,7 +304,7 @@ function Pay() {
                   setTouchedWallet(true)
                 }}
                 onBlur={() => setTouchedWallet(true)}
-                placeholder="0x..."
+                placeholder={recipientPlaceholder(network)}
                 spellCheck={false}
                 style={{
                   width: '100%',
@@ -227,7 +321,7 @@ function Pay() {
               {walletError ? (
                 <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: '#ef4444' }}>{walletError}</span>
               ) : (
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text)' }}>Validación re: pay.py:86 `0x[a-fA-F0-9]{40}` y no cero</span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text)' }}>{recipientHelp(network)}</span>
               )}
             </div>
 
@@ -274,7 +368,7 @@ function Pay() {
               disabled={!canPay}
               title={!walletValid ? 'Wallet inválida' : isRed ? 'Bloqueado en RED' : needsOverride ? 'Falta override' : !amountValid ? 'Monto inválido' : ''}
             >
-              {paying ? 'Pagando…' : isRed ? 'Bloqueado' : 'Pagar'}
+              {paying ? 'Generando…' : isRed ? 'Bloqueado' : 'Generar preview'}
             </button>
           </div>
         </div>

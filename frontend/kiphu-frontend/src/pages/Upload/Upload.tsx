@@ -8,7 +8,8 @@ export default function Upload() {
   const [files, setFiles] = useState<(File | null)[]>([null, null, null])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [wallet, setWallet] = useState('0x742d35Cc6634C0532925a3b8D4C9e4e6b7a8b9c0')
+  const [wallet, setWallet] = useState('')
+  const [network, setNetwork] = useState('ethereum')
   const navigate = useNavigate()
 
   const handleFile = useCallback(
@@ -67,6 +68,7 @@ export default function Upload() {
           proposal: JSON.stringify(data, null, 2),
           score,
           wallet,
+          network,
           status: score !== null ? undefined : 'proposal',
         },
       })
@@ -76,7 +78,7 @@ export default function Upload() {
     } finally {
       setLoading(false)
     }
-  }, [files, navigate, wallet])
+  }, [files, navigate, network, wallet])
 
   const canValidate = files.every((f) => f !== null) && !loading
 
@@ -90,13 +92,19 @@ export default function Upload() {
               <h1 className="upload-page__title" style={{ textAlign: 'left', fontSize: '56px', marginTop: '32px', lineHeight: 1.05, letterSpacing: '-0.03em' }}>Cargar información</h1>
               <div className="upload-page__section" style={{ marginTop: 'auto', marginBottom: 'auto' }}>
                 <span className="upload-page__kicker">Destino</span>
+              <label className="upload-page__label">Red</label>
+              <select className="upload-page__input" value={network} onChange={(e) => setNetwork(e.target.value)}>
+                <option value="ethereum">Ethereum</option>
+                <option value="tron">TRON</option>
+                <option value="solana">Solana</option>
+              </select>
               <label className="upload-page__label">Enviar a wallet</label>
               <input
                 type="text"
                 className="upload-page__input"
                 value={wallet}
                 onChange={(e) => setWallet(e.target.value)}
-                placeholder="0x..."
+                placeholder={network === 'ethereum' ? '0x...' : network === 'tron' ? 'T...' : 'Solana base58...'}
                 spellCheck={false}
               />
               </div>

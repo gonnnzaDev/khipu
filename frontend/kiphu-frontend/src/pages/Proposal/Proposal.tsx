@@ -10,6 +10,7 @@ type LocationState = {
   status?: Status
   score?: number
   wallet?: string
+  network?: string
 }
 
 type Check = { id: string; status: 'PASS' | 'FAIL' | 'REVIEW'; detail: string }
@@ -48,6 +49,7 @@ function Proposal() {
   const proposal = location.state?.proposal ?? null
   const rawStatus: Status = location.state?.status ?? (proposal ? 'proposal' : 'idle')
   const wallet = location.state?.wallet ?? null
+  const network = location.state?.network ?? 'ethereum'
 
   const parsed = useMemo(() => parseProposal(proposal), [proposal])
   const reconciliacion = parsed?.reconciliacion ?? parsed?.reconciliation ?? parsed?.reconcile ?? null
@@ -73,10 +75,12 @@ function Proposal() {
       state: {
         proposal,
         wallet,
+        network,
         score,
         status: reconcStatus,
         amount: invoiceTotal != null ? String(invoiceTotal) : undefined,
         invoiceId: invoiceNumber,
+        invoiceCurrency,
         riskFlags,
         recommendation,
       } as any,

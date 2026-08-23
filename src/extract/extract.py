@@ -1,10 +1,15 @@
 import json
 
-from tetherto.qvac_sdk import Client
-
 from src.ocr.ocr import extraer_datos_imagen_ocr
-from tetherto.qvac_sdk import Client, load_model, completion, unload_model
-from tetherto.qvac_sdk.models import QWEN3VL_2B_MULTIMODAL_Q4_K
+try:
+    from tetherto.qvac_sdk import Client, load_model, completion, unload_model
+    from tetherto.qvac_sdk.models import QWEN3VL_2B_MULTIMODAL_Q4_K
+except ModuleNotFoundError:
+    Client = None
+    load_model = None
+    completion = None
+    unload_model = None
+    QWEN3VL_2B_MULTIMODAL_Q4_K = None
 
 format_output = """
 {
@@ -63,6 +68,9 @@ prompt = f"""
 
 
 async def estructurar_texto_a_json(factura, texto=None):
+    if Client is None:
+        raise RuntimeError("QVAC SDK no está instalado. Instalar tetherto.qvac_sdk para extracción real.")
+
     datos = texto if texto is not None else await extraer_datos_imagen_ocr(factura)
     
     async with Client() as client:
@@ -98,6 +106,5 @@ async def estructurar_texto_a_json(factura, texto=None):
         finally: 
             if t is not None and model_id is not None:
                 await unload_model(t, model_id=model_id)
-
 
 
