@@ -62,7 +62,8 @@ prompt = f"""
 
 
 
-async def estructurar_texto_a_json(datos):
+async def estructurar_texto_a_json(factura, texto=None):
+    datos = texto if texto is not None else await extraer_datos_imagen_ocr(factura)
     
     async with Client() as client:
         
