@@ -1,7 +1,14 @@
 import json
 
-from tetherto.qvac_sdk import Client, load_model, completion, unload_model
-from tetherto.qvac_sdk.models import QWEN3VL_2B_MULTIMODAL_Q4_K
+try:
+    from tetherto.qvac_sdk import Client, load_model, completion, unload_model
+    from tetherto.qvac_sdk.models import QWEN3VL_2B_MULTIMODAL_Q4_K
+except ModuleNotFoundError:
+    Client = None
+    load_model = None
+    completion = None
+    unload_model = None
+    QWEN3VL_2B_MULTIMODAL_Q4_K = None
 
 prompt = """
         Extrae todo el texto visible de la imagen y conviértelo a texto plano.
@@ -28,6 +35,9 @@ Reglas:
 
 
 async def extraer_datos_imagen_ocr(archivo):
+    if Client is None:
+        raise RuntimeError("QVAC SDK no está instalado. Instalar tetherto.qvac_sdk para OCR real.")
+
     async with Client() as client:
 
         t = None
@@ -53,6 +63,9 @@ async def extraer_datos_imagen_ocr(archivo):
 
 async def transformar_ticket(datos):
     """Recibe un JSON (dict), la IA local lo formatea lindo y devuelve el texto."""
+    if Client is None:
+        raise RuntimeError("QVAC SDK no está instalado. Instalar tetherto.qvac_sdk para formatear comprobantes.")
+
     async with Client() as client:
 
         t = None

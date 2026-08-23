@@ -1,9 +1,8 @@
 import json, uuid, time
+from json import JSONDecodeError
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from src.normalize.normalize import normalize_invoice
-from src.ocr.ocr import extraer_datos_imagen_ocr
-from src.extract.extract import estructurar_texto_a_json
 
 MODEL_ID = "QWEN3VL_2B_MULTIMODAL_Q4_K"
 
@@ -95,6 +94,18 @@ def _detect_invoice_number(filename: str):
             return key
     return None
 
+
+async def _read_json_upload(upload: UploadFile, label: str):
+    try:
+        return json.loads(await upload.read())
+    except UnicodeDecodeError as error:
+        raise HTTPException(422, f"{label} no es UTF-8 válido.") from error
+    except JSONDecodeError as error:
+        raise HTTPException(
+            422,
+            f"{label} JSON inválido: {error.msg} en línea {error.lineno}, columna {error.colno}.",
+        ) from error
+
 @router.post("/validate")
 async def validate(
     invoice: UploadFile = File(...),
@@ -108,8 +119,8 @@ async def validate(
     # Evidencia
     img_path = run_dir / (invoice.filename or "invoice.png")
     img_path.write_bytes(await invoice.read())
-    oc_data = json.loads(await oc.read())
-    guide_data = json.loads(await guide.read())
+    oc_data = await _read_json_upload(oc, "OC")
+    guide_data = await _read_json_upload(guide, "Guía")
     (run_dir / "oc.json").write_text(json.dumps(oc_data, ensure_ascii=False))
     (run_dir / "guide.json").write_text(json.dumps(guide_data, ensure_ascii=False))
 
@@ -117,6 +128,9 @@ async def validate(
     t0 = time.time()
     raw, qvac_error, texto = None, None, ""
     try:
+        from src.ocr.ocr import extraer_datos_imagen_ocr
+        from src.extract.extract import estructurar_texto_a_json
+
         texto = await extraer_datos_imagen_ocr(str(img_path))
         (run_dir / "ocr_text.txt").write_text(texto or "")
         for _ in range(3):
