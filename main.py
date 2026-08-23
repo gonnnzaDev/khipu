@@ -1,21 +1,29 @@
-from fastapi import FastAPI, APIRouter, UploadFile, File
-import shutil, tempfile
-from pathlib import Path
+from http.client import HTTPException
 
+from fastapi import FastAPI, UploadFile, File
+from pathlib import Path
+from modules.archivos import guardar
 from src.pay.pay import PayRequest, create_payment_response
 
 app = FastAPI(title="KHIPU")
 
-@app.post("/subir-archivo")
-async def archivo_post(file: UploadFile = File(...)):
-    try:
-        dest = Path("data/private/invoices") / file.filename
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        with dest.open("wb") as out:
-            shutil.copyfileobj(file.file, out)
-        return {"path": str(dest)}
-    except Exception as e:
-        return {"mensaje": str(e)}
+@app.post("/subir/factura/")
+async def subir_factura(file: UploadFile = File(...)):
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(400, "factura debe ser PNG/JPG/JPEG")
+    return guardar(file, "data/private/invoices")
+
+@app.post("/subir/oc/")
+async def subir_oc(file: UploadFile = File(...)):
+    if not file.filename.endswith(".json"):
+        raise HTTPException(400, "OC debe ser .json")
+    return guardar(file, "data/private/oc")
+
+@app.post("/subir/guia/")
+async def subir_guia(file: UploadFile = File(...)):
+    if not file.filename.endswith(".json"):
+        raise HTTPException(400, "guía debe ser .json")
+    return guardar(file, "data/private/guides")
 
 @app.delete("/eliminar-archivo")
 async def archivo_delete(path: str):
